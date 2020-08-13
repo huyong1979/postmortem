@@ -1,0 +1,21 @@
+#execute the script if 1 to 0
+record(calcout,"SR-APHLA{RF}PM-Calc_") {
+    field(INPA,"SR:C23-BI{BPM:10}PM:Status-I CP")
+    field(CALC,"A")
+    field(OUT, "SR-APHLA{RF}PM-Cmd.PROC")
+    field(ODLY, "65")
+    field(OOPT,"Transition To Zero")
+}
+
+record(bo, "SR-APHLA{RF}PM-Cmd") {
+   field(DTYP,"Launcher")
+   field(OUT, "@python /epics/iocs/pm-RF/save_pmdata.py RF")
+   field(ZNAM,"Idle")
+   field(ONAM,"Setting")
+}
+
+record(waveform, "SR-APHLA{RF}PM:Status-Wf") {
+   field(DESC,"Status Message")
+   field(NELM,"500")
+   field(FTVL,"CHAR")
+}

@@ -1,0 +1,4 @@
+NAME=pm-RF
+PORT=4050
+USER=softioc
+HOST=acc64-cr
