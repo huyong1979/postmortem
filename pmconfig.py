@@ -24,6 +24,7 @@ pvlist =SR-RF{CFC:D-RAM-Chan:0}Val:I-I
         raise RuntimeError("Does not support Windows platform yet.")
 
     config = ConfigParser.ConfigParser()
+    config.optionxform = str #keep keys as its original
     try:
         #user home directory settings will overwrite system config(/etc/...), 
         #system config will overwrite the config in the current working directory
