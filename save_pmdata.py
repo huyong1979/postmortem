@@ -9,44 +9,58 @@ if len(sys.argv) != 2:
     sys.exit()
 sub_sys = sys.argv[1]
 
+import os
+#read sub_system PM configuration as a dictionary
+import ConfigParser
+config = ConfigParser.ConfigParser()
+config.optionxform = str #keep keys as its original
+try:
+    ioc_dir = "/epics/iocs/pm-" + str(sub_sys) + "/"
+    config.read([os.path.join(os.path.dirname(ioc_dir), 'pm.conf')])
+except IOError:
+    print("Error: no sub-system configuration file 'pm.conf' found")
+    sys.exit() 
+pmconfig_dict = {}
+sections = config.sections()
+for section in sections:
+    pmconfig_dict[section] = dict(config.items(section))
+#print(pmconfig_dict)
+
 import time
 t0 = time.time()
 
-import os
 os.environ["EPICS_CA_MAX_ARRAY_BYTES"] = '200000000'
 from pkg_resources import require
 require('cothread')
-from cothread.catools import caget, FORMAT_TIME
+from cothread.catools import caget, caput, FORMAT_TIME, DBR_CHAR_STR
 
 import traceback
 from datetime import datetime
 import h5py
 from pathlib import Path
-import pmconfig 
-pmconfig_dict = pmconfig.get_pmconfig()
 
-#we can use "caput SR-APHLA{RF-CFD2}PM-Cmd.PROC 1" to test this script
-test_pv = "SR-APHLA{" + sub_sys + "}PM:TestEnabled-Cmd"
-test_enabled = caget(test_pv) #0: NO; 1: YES
+status_pv = "SR-APHLA{" + sub_sys + "}PM:Status-Sts"
+error_pv =  "SR-APHLA{" + sub_sys + "}PM:ErrorMsg-Wf"
+filename_pv =  "SR-APHLA{" + sub_sys + "}PM:LastSavedFile-Wf"
+
 trigger_pvname = str(pmconfig_dict["Trigger"]["pv"])
 trigger_value = caget(trigger_pvname, format=FORMAT_TIME)#0: PM Detected
-if test_enabled == 0 and trigger_value == 1:
-    print("Error: someone has already reset PM before data were saved")
-    sys.exit()
 trigger_ts = datetime.fromtimestamp(trigger_value.timestamp)
 print("\n%s: beam dumped!"%str(trigger_ts))#2020-08-14 20:56:41.355014: beam dumped!
-print("%s: %d-sec later, start to save data ..."%(datetime.now(),time.time()-trigger_value.timestamp))
+deltaT = time.time()-trigger_value.timestamp
+print("%s: %d-sec later, start to save data ..."%(datetime.now(), deltaT))
+caput(status_pv, 1) #"Started to read data ..."
 
 #.h5 is saved either in /WFdata/WFdata or the current IOC directory /epics/iocs/IOCNAME
 #file format: /WFdata/WFdata/Y2020/M08/D12/RF-20200812-16:34:22.774905.h5
-path = '/WFdata/WFdata/'
+path = '/WFdata/WFdata'
 if not os.path.isdir(path):
     print("%s seems not available, so use the current working directory"%path)
-    path = './'
+    path = os.popen('pwd').read().strip()
 year = str(time.strftime("%Y"))
 mon = str(time.strftime("%m"))
 day = str(time.strftime("%d"))
-path = path + 'Y' + year + '/M' + mon + '/D' + day + '/' 
+path = path + '/Y' + year + '/M' + mon + '/D' + day + '/' 
 if not os.path.isdir(path):
     print("the directory %s seems not existing, so creating one ..."%path)
     new_dir = Path(path)
@@ -73,25 +87,30 @@ try:
         pvlist_str = pmconfig_dict["PV_Names"][pv_group]
         pv_names = [str(pv) for pv in pvlist_str.split()]
         #hf['PV_Names'/str(pv_group)] = pv_names
-        pv_values = caget(pv_names, timeout=50, format=FORMAT_TIME)
+        #the default timeout=5 seems not working for big RF waveforms
+        pv_values = caget(pv_names, timeout=60, format=FORMAT_TIME)
         n_pvs += len(pv_values)
         nelems_perPV = len(pv_values[0])
         pv_timestamps = [str(datetime.fromtimestamp(pv_value.timestamp)) 
                             for pv_value in pv_values]
-
+        
         g_pvnames.create_dataset(str(pv_group), data=pv_names)
         g_pvtimestamp.create_dataset(str(pv_group), data=pv_timestamps)
         g_wfdata.create_dataset(str(pv_group), data=pv_values)
+        caput(status_pv, 2) #"Started to write data ..."
 
     #the fifth standard group: Meta 
     hf['Meta/Nelems_perPV'] = nelems_perPV
     hf['Meta/Num_PVs'] = n_pvs
 
     hf.close()
-    print("%s: successfully saved data to %s"%(datetime.now(), file_name))
+    caput(status_pv, 0) #"Done!
+    caput(error_pv, "No error.", datatype=DBR_CHAR_STR)
+    caput(filename_pv, file_name,datatype=DBR_CHAR_STR)
     t1 = time.time()
     print("it takes %f seconds to read and write data to a file"%(t1-t0))
 except:
-    print("%s: something wrong occurred: "%datetime.now())
+    caput(status_pv, 3) #"Failed!
+    caput(error_pv, traceback.format_exc()[:300], datatype=DBR_CHAR_STR)
     traceback.print_exc()
     sys.exit()

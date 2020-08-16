@@ -1,4 +1,4 @@
-NAME=pm-RF
+NAME=pm-postmortem
 PORT=4050
 USER=softioc
 HOST=acc64-cr

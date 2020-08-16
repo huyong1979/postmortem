@@ -1,30 +1,71 @@
-#execute the script if 1 to 0
-record(calcout,"SR-APHLA{RF-CFD2}PM-Calc_") {
-    #field(INPA,"SR:C23-BI{BPM:10}PM:Status-I CP")
+#$(SYS):RF-CFD2
+record(calcout,"SR-APHLA{$(SYS)}PM-Calc_") {
     field(INPA,"SR-RF{CFD:2-RAM}Cmd:Time CP")
-    field(CALC,"A")
-    field(OUT, "SR-APHLA{RF}PM-Cmd.PROC")
-    field(ODLY, "60")
-    field(OOPT,"Transition To Zero")
+    field(CALC,"1")
+    field(OUT, "SR-APHLA{$(SYS)}PM-Cmd.PROC")
+    field(ODLY, "$(DELAY)")
+    #field(ODLY, "60")
+    #field(INPA,"SR:C23-BI{BPM:10}PM:Status-I CP")
+    #field(CALC,"A")
+    #field(OOPT,"Transition To Zero")
 }
 
-record(bo, "SR-APHLA{RF-CFD2}PM-Cmd") {
+record(bo, "SR-APHLA{$(SYS)}PM-Cmd") {
     field(DTYP,"Launcher")
-    field(OUT, "@python /epics/iocs/pm-RF/save_pmdata.py RF-CFD2")
+    field(OUT, "@python /epics/iocs/postmortem/save_pmdata.py $(SYS)")
     field(ZNAM,"Idle")
     field(ONAM,"Setting")
 }
 
-record(bo, "SR-APHLA{RF-CFD2}PM:TestEnabled-Cmd") {
-    field(ZNAM, "NO")
-    field(ONAM, "YES")
-    field(VAL,  "1")
-    field(PINI, "YES")
-    #field(HIGH, "10")
+record(mbbi, "SR-APHLA{$(SYS)}PM:Status-Sts")
+{
+    field(PINI,"YES")
+    field(ZRVL,"0")
+    field(ONVL,"1")
+    field(TWVL,"2")
+    field(THVL,"3")
+    field(ZRST,"Done! Ready for next one")
+    field(ONST,"Started to read data ...")
+    field(TWST,"Started to write data ...")
+    field(THST,"Failed!")
+    info(autosaveFields_pass0, "VAL")
 }
 
-record(waveform, "SR-APHLA{RF-CFD2}PM:Status-Wf") {
-    field(DESC,"Status Message")
+record(waveform, "SR-APHLA{$(SYS)}PM:ErrorMsg-Wf") {
+    field(DESC,"Error Message")
     field(NELM,"500")
     field(FTVL,"CHAR")
+    field(PINI, "YES")
+    info(autosaveFields_pass1, "VAL")
 }
+
+record(waveform, "SR-APHLA{$(SYS)}PM:LastSavedFile-Wf") {
+    field(DESC,"path and file name")
+    field(NELM,"500")
+    field(FTVL,"CHAR")
+    field(PINI, "YES")
+    info(autosaveFields_pass1, "VAL")
+}
+
+#record(stringin, "SR-APHLA{$(SYS)}PM:IOCName-Sts") {
+#    field(PINI, "YES")
+#    field(VAL,"acc64-cr:/epics/iocs/pm-RFCFD2")
+#    info(autosaveFields_pass0, "VAL")
+#}
+
+#record(bo, "SR-APHLA{$(SYS)}PM:TestEnabled-Cmd") {
+#    field(ZNAM, "NO")
+#    field(ONAM, "YES")
+#    field(VAL,  "1")
+#    field(PINI, "YES")
+#    #field(HIGH, "10")
+#    info(autosaveFields_pass0, "VAL")
+#}
+
+#record(waveform, "SR-APHLA{$(SYS)}PM:StatusMsg-Wf") {
+#    field(DESC,"Status Message")
+#    field(NELM,"500")
+#    field(FTVL,"CHAR")
+#    field(PINI, "YES")
+#    info(autosaveFields_pass1, "VAL")
+#}
