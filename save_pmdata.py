@@ -103,12 +103,21 @@ try:
     hf['Meta/Nelems_perPV'] = nelems_perPV
     hf['Meta/Num_PVs'] = n_pvs
 
+    #special group 'PV_StopAddr' for BPM-TBT
+    try:
+        pvlist_str = pmconfig_dict["PV_StopAddr"]["pvlist"]
+        pv_names = [str(pv) for pv in pvlist_str.split()]
+        hf['PV_StopAddr'] = caget(pv_names)
+    except:
+        pass 
+
     hf.close()
     caput(status_pv, 0) #"Done!
     caput(error_pv, "No error.", datatype=DBR_CHAR_STR)
     caput(filename_pv, file_name,datatype=DBR_CHAR_STR)
-    t1 = time.time()
-    print("it takes %f seconds to read and write data to a file"%(t1-t0))
+    totalT = time.time() - t0
+    print("it takes %f seconds to read and write data to a file"%totalT)
+    caput("SR-APHLA{" + sub_sys + "}PM:RWTime-I", totalT)
 except:
     caput(status_pv, 3) #"Failed!
     caput(error_pv, traceback.format_exc(), datatype=DBR_CHAR_STR)

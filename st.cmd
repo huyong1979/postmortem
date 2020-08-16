@@ -17,6 +17,7 @@ scriptlaunch_registerRecordDeviceDriver(pdbbase)
 cd "/epics/iocs/postmortem/"
 dbLoadRecords("pm.db", "SYS=$(SYS), DELAY=$(DELAY)")
 
+cd $(TOP)
 set_savefile_path("./as", "/save")
 set_requestfile_path("./as", "/req")
 set_pass0_restoreFile("settings_pass0.sav")
