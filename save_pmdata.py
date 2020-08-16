@@ -111,6 +111,6 @@ try:
     print("it takes %f seconds to read and write data to a file"%(t1-t0))
 except:
     caput(status_pv, 3) #"Failed!
-    caput(error_pv, traceback.format_exc()[:300], datatype=DBR_CHAR_STR)
+    caput(error_pv, traceback.format_exc(), datatype=DBR_CHAR_STR)
     traceback.print_exc()
     sys.exit()

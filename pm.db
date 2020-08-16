@@ -33,7 +33,7 @@ record(mbbi, "SR-APHLA{$(SYS)}PM:Status-Sts")
 
 record(waveform, "SR-APHLA{$(SYS)}PM:ErrorMsg-Wf") {
     field(DESC,"Error Message")
-    field(NELM,"500")
+    field(NELM,"300")
     field(FTVL,"CHAR")
     field(PINI, "YES")
     info(autosaveFields_pass1, "VAL")
