@@ -1,8 +1,5 @@
 #!/epics/iocs/postmortem/pure-elauncher/bin/linux-x86_64/scriptlaunch
 
-#setup $SYS, $DELAY for each PM softIOC
-< macro.cmd
-
 epicsEnvSet("EPICS_CA_ADDR_LIST", "10.0.153.255")
 epicsEnvSet("EPICS_CA_AUTO_ADDR_LIST", "NO")
 #epicsEnvSet("PATH", "/opt/conda_envs/ap-2019-2.0/bin:$PATH")
@@ -15,7 +12,7 @@ scriptlaunch_registerRecordDeviceDriver(pdbbase)
 #dbLoadRecords("$(EPICS_BASE)/db/iocAdminSoft.db", "IOC=SR-APHLA{IOC:PMRFCFD2}")
 #dbLoadRecords ("$(EPICS_BASE)/db/save_restoreStatus.db", "P=SR-APHLA{IOC:PMRFCFD2}")
 cd "/epics/iocs/postmortem/"
-dbLoadRecords("pm.db", "SYS=$(SYS), DELAY=$(DELAY)")
+dbLoadRecords("pmMisc.db")
 
 set_savefile_path("./as", "/save")
 set_requestfile_path("./as", "/req")
