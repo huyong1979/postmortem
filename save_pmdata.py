@@ -42,6 +42,7 @@ from pathlib import Path
 status_pv = "SR-APHLA{" + sub_sys + "}PM:Status-Sts"
 error_pv =  "SR-APHLA{" + sub_sys + "}PM:ErrorMsg-Wf"
 filename_pv =  "SR-APHLA{" + sub_sys + "}PM:LastSavedFile-Wf"
+ca_timeout = caget("SR-APHLA{" + sub_sys + "}PM:CATimeout-I") # 60-sec
 
 trigger_pvname = str(pmconfig_dict["Trigger"]["pv"])
 trigger_value = caget(trigger_pvname, format=FORMAT_TIME)#0: PM Detected
@@ -88,7 +89,7 @@ try:
         pv_names = [str(pv) for pv in pvlist_str.split()]
         #hf['PV_Names'/str(pv_group)] = pv_names
         #the default timeout=5 seems not working for big RF waveforms
-        pv_values = caget(pv_names, timeout=60, format=FORMAT_TIME)
+        pv_values = caget(pv_names, timeout=ca_timeout, format=FORMAT_TIME)
         n_pvs += len(pv_values)
         nelems_perPV = len(pv_values[0])
         pv_timestamps = [str(datetime.fromtimestamp(pv_value.timestamp)) 
