@@ -1,0 +1,37 @@
+#$miscellaneous PVs for Postmortem application
+record(calcout,"SR-APHLA{PM}LastDumpTS-Calc_") {
+    field(INPA,"SR:C23-BI{BPM:10}PM:Status-I CP")
+    field(CALC,"1")
+    field(OOPT,"Transition To Zero")
+    field(OUT, "SR-APHLA{PM}LastDumpTS-Sts.PROC")
+}
+
+record(stringin, "SR-APHLA{PM}LastDumpTS-Sts")
+{
+    field(DTYP,"Soft Timestamp")
+    # DO NOT use PINI, otherwise, autosave does not work
+#recGblGetTimeStamp: dbGetTimeStamp failed, 
+#SR-APHLA{PM}LastDumpTS-Sts.TSEL = SR:C23-BI{BPM:10}PM:Status-I
+    #field(PINI,"YES")
+    field(UDF,"0")
+    field(TSEL,"SR:C23-BI{BPM:10}PM:Status-I.TIME")
+    field(INP, "@%Y-%m-%d %H:%M:%S.%f")
+    info(autosaveFields_pass0, "VAL")
+}
+
+record(calcout,"SR-APHLA{PM}LastResetTS-Calc_") {
+    field(INPA,"SR:C23-BI{BPM:10}PM:Status-I CP")
+    field(CALC,"1")
+    field(OOPT,"Transition To One")
+    field(OUT, "SR-APHLA{PM}LastResetTS-Sts.PROC")
+}
+
+record(stringin, "SR-APHLA{PM}LastResetTS-Sts")
+{
+    field(DTYP,"Soft Timestamp")
+    field(UDF,"0")
+    field(TSEL,"SR:C23-BI{BPM:10}PM:Status-I.TIME")
+    field(INP, "@%Y-%m-%d %H:%M:%S.%f")
+    info(autosaveFields_pass0, "VAL")
+}
+

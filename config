@@ -1,4 +1,6 @@
-NAME=pm-postmortem
+NAME=postmortem
 PORT=4050
 USER=softioc
 HOST=acc64-cr
+#have to use ./postmortem-st.cmd
+EXEC=./postmortem-st.cmd
