@@ -25,3 +25,5 @@ makeAutosaveFileFromDbInfo("./as/req/settings_pass0.req", "autosaveFields_pass0"
 create_monitor_set("settings_pass0.req", 30 , "")
 makeAutosaveFileFromDbInfo("./as/req/settings_pass1.req", "autosaveFields_pass1")
 create_monitor_set("settings_pass1.req", 30 , "")
+
+#dbpf SR-APHLA{PM}LastDumpTS-Sts.PROC 1

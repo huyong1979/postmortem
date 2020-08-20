@@ -1,7 +1,15 @@
 #$miscellaneous PVs for Postmortem application
+#makeAutosaveFileFromDbInfo("./as/req/settings_pass1.req", "autosaveFields_pass1")
+#create_monitor_set("settings_pass1.req", 30 , "")
+#scanOnce: Process SR-APHLA{PM}LastDumpTS-Calc_
+#scanOnce: Process SR-APHLA{PM}LastResetTS-Calc_
+#scanOnce: Process SR-APHLA{PM}LastResetTS-Sts
+
+#SR-APHLA{PM}LastDumpTS-Calc_ is processed during iocInit
 record(calcout,"SR-APHLA{PM}LastDumpTS-Calc_") {
+    field(TPRO,"1")
     field(INPA,"SR:C23-BI{BPM:10}PM:Status-I CP")
-    field(CALC,"1")
+    field(CALC,"A")
     field(OOPT,"Transition To Zero")
     field(OUT, "SR-APHLA{PM}LastDumpTS-Sts.PROC")
 }
@@ -14,22 +22,27 @@ record(stringin, "SR-APHLA{PM}LastDumpTS-Sts")
 #SR-APHLA{PM}LastDumpTS-Sts.TSEL = SR:C23-BI{BPM:10}PM:Status-I
     #field(PINI,"YES")
     field(UDF,"0")
+    field(TPRO,"1")
     field(TSEL,"SR:C23-BI{BPM:10}PM:Status-I.TIME")
     field(INP, "@%Y-%m-%d %H:%M:%S.%f")
     info(autosaveFields_pass0, "VAL")
 }
 
+#SR-APHLA{PM}LastResetTS-Calc_ is processed during iocInit
 record(calcout,"SR-APHLA{PM}LastResetTS-Calc_") {
+    field(TPRO,"1")
     field(INPA,"SR:C23-BI{BPM:10}PM:Status-I CP")
-    field(CALC,"1")
-    field(OOPT,"Transition To One")
+    field(CALC,"A")
+    field(OOPT,"Transition To Non-zero")
     field(OUT, "SR-APHLA{PM}LastResetTS-Sts.PROC")
 }
 
+#SR-APHLA{PM}LastResetTS-Sts is processed during iocInit
 record(stringin, "SR-APHLA{PM}LastResetTS-Sts")
 {
     field(DTYP,"Soft Timestamp")
     field(UDF,"0")
+    field(TPRO,"1")
     field(TSEL,"SR:C23-BI{BPM:10}PM:Status-I.TIME")
     field(INP, "@%Y-%m-%d %H:%M:%S.%f")
     info(autosaveFields_pass0, "VAL")
