@@ -1,13 +1,12 @@
 #$(SYS):RF-CFD2
 record(calcout,"SR-APHLA{$(SYS)}PM-Calc_") {
-    field(INPA,"SR-RF{CFD:2-RAM}Cmd:Time CP")
-    field(CALC,"1")
+    #field(INPA,"SR-RF{CFD:2-RAM}Cmd:Time CP")
+    #field(CALC,"1")
     field(OUT, "SR-APHLA{$(SYS)}PM-Cmd.PROC")
     field(ODLY, "$(DELAY)")
-    #field(ODLY, "60")
-    #field(INPA,"SR:C23-BI{BPM:10}PM:Status-I CP")
-    #field(CALC,"A")
-    #field(OOPT,"Transition To Zero")
+    field(INPA,"SR:C23-BI{BPM:10}PM:Status-I CP")
+    field(CALC,"A")
+    field(OOPT,"Transition To Zero")
 }
 
 record(bo, "SR-APHLA{$(SYS)}PM-Cmd") {

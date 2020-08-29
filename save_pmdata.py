@@ -20,6 +20,7 @@ try:
 except IOError:
     print("Error: no sub-system configuration file 'pm.conf' found")
     sys.exit() 
+
 pmconfig_dict = {}
 sections = config.sections()
 for section in sections:
@@ -32,6 +33,7 @@ t0 = time.time()
 os.environ["EPICS_CA_MAX_ARRAY_BYTES"] = '200000000'
 from pkg_resources import require
 require('cothread')
+import cothread
 from cothread.catools import caget, caput, FORMAT_TIME, DBR_CHAR_STR
 
 import traceback
@@ -47,17 +49,31 @@ ca_timeout = caget("SR-APHLA{" + sub_sys + "}PM:CATimeout-I") # 60-sec
 trigger_pvname = str(pmconfig_dict["Trigger"]["pv"])
 trigger_value = caget(trigger_pvname, format=FORMAT_TIME)#0: PM Detected
 trigger_ts = datetime.fromtimestamp(trigger_value.timestamp)
-print("\n%s: beam dumped!"%str(trigger_ts))#2020-08-14 20:56:41.355014: beam dumped!
-deltaT = time.time()-trigger_value.timestamp
-print("%s: %d-sec later, start to save data ..."%(datetime.now(), deltaT))
-caput(status_pv, 1) #"Started to read data ..."
+print("\n%s: beam dumped!"%str(trigger_ts))
+#2020-08-26 02:15:48.435862: beam dumped!
+#arget -s "-1 days" SR-RF{CFD:2-RAM}Cmd:Time
+#2020-08-26 02:17:49.182957 08/26/2020 02:17:49.183  
 
+#cothread.catools.ca_nothing: SR-RF{CFD:2-RAM}Cmd:Time: 
+##  User specified timeout on IO operation expired
+try: 
+    if "RF-CFD2" == str(sub_sys): #RF CFD2 has bigger waveform
+        rf_ts = caget("SR-RF{CFD:2-RAM}Cmd:Time", format=FORMAT_TIME)
+        if (rf_ts.timestamp - trigger_value.timestamp) < 60:
+            delay_t = int(time.time() - trigger_value.timestamp);
+            print("%s TS still has not updated after %d-sec delay"%(sub_sys,delay_t))
+except:
+    caput(error_pv, traceback.format_exc(), datatype=DBR_CHAR_STR)
+    traceback.print_exc() 
+
+caput(status_pv, 1) #"Started to read data ..."
 #.h5 is saved either in /WFdata/WFdata or the current IOC directory /epics/iocs/IOCNAME
 #file format: /WFdata/WFdata/Y2020/M08/D12/RF-20200812-16:34:22.774905.h5
 path = '/WFdata/WFdata'
 if not os.path.isdir(path):
     print("%s seems not available, so use the current working directory"%path)
     path = os.popen('pwd').read().strip()
+
 year = str(time.strftime("%Y"))
 mon = str(time.strftime("%m"))
 day = str(time.strftime("%d"))
@@ -66,6 +82,7 @@ if not os.path.isdir(path):
     print("the directory %s seems not existing, so creating one ..."%path)
     new_dir = Path(path)
     new_dir.mkdir(parents=True)   
+
 ts_format = "%Y%m%d-%H:%M:%S.%f"
 file_name = path + sub_sys + '-' + trigger_ts.strftime(ts_format) + ".h5"
 
