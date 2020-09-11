@@ -7,18 +7,16 @@ import sys
 if len(sys.argv) != 2:
     print("You have to give a sub-system name, e.g.: python %s RF"%sys.argv[0])
     sys.exit()
-sub_sys = sys.argv[1]
+sub_sys = str(sys.argv[1])
 
-import os
 #read sub_system PM configuration as a dictionary
 import ConfigParser
 config = ConfigParser.ConfigParser()
 config.optionxform = str #keep keys as its original
 try:
-    ioc_dir = "/epics/iocs/pm-" + str(sub_sys) + "/"
-    config.read([os.path.join(os.path.dirname(ioc_dir), 'pm.conf')])
+    config.read(["/epics/iocs/postmortem/pm-" + sub_sys + ".conf"])
 except IOError:
-    print("Error: no sub-system configuration file 'pm.conf' found")
+    print("Error: no sub-system configuration file found")
     sys.exit() 
 
 pmconfig_dict = {}
@@ -30,6 +28,7 @@ for section in sections:
 import time
 t0 = time.time()
 
+import os
 os.environ["EPICS_CA_MAX_ARRAY_BYTES"] = '200000000'
 from pkg_resources import require
 require('cothread')
@@ -50,21 +49,6 @@ trigger_pvname = str(pmconfig_dict["Trigger"]["pv"])
 trigger_value = caget(trigger_pvname, format=FORMAT_TIME)#0: PM Detected
 trigger_ts = datetime.fromtimestamp(trigger_value.timestamp)
 print("\n%s: beam dumped!"%str(trigger_ts))
-#2020-08-26 02:15:48.435862: beam dumped!
-#arget -s "-1 days" SR-RF{CFD:2-RAM}Cmd:Time
-#2020-08-26 02:17:49.182957 08/26/2020 02:17:49.183  
-
-#cothread.catools.ca_nothing: SR-RF{CFD:2-RAM}Cmd:Time: 
-##  User specified timeout on IO operation expired
-try: 
-    if "RF-CFD2" == str(sub_sys): #RF CFD2 has bigger waveform
-        rf_ts = caget("SR-RF{CFD:2-RAM}Cmd:Time", format=FORMAT_TIME)
-        if (rf_ts.timestamp - trigger_value.timestamp) < 60:
-            delay_t = int(time.time() - trigger_value.timestamp);
-            print("%s TS still has not updated after %d-sec delay"%(sub_sys,delay_t))
-except:
-    caput(error_pv, traceback.format_exc(), datatype=DBR_CHAR_STR)
-    traceback.print_exc() 
 
 caput(status_pv, 1) #"Started to read data ..."
 #.h5 is saved either in /WFdata/WFdata or the current IOC directory /epics/iocs/IOCNAME
@@ -108,20 +92,26 @@ try:
         #the default timeout=5 seems not working for big RF waveforms
         pv_values = caget(pv_names, timeout=ca_timeout, format=FORMAT_TIME)
         n_pvs += len(pv_values)
-        nelems_perPV = len(pv_values[0])
+
+        try:
+            #pv_values[0] could be a scalar value
+            nelems_perPV = len(pv_values[0])
+        except:    #TypeError: object of type 'ca_int' has no len()
+            pass 
+
         pv_timestamps = [str(datetime.fromtimestamp(pv_value.timestamp)) 
                             for pv_value in pv_values]
-        
+
         g_pvnames.create_dataset(str(pv_group), data=pv_names)
         g_pvtimestamp.create_dataset(str(pv_group), data=pv_timestamps)
         g_wfdata.create_dataset(str(pv_group), data=pv_values, compression='gzip')
         caput(status_pv, 2) #"Started to write data ..."
 
     #the fifth standard group: Meta 
-    hf['Meta/Nelems_perPV'] = nelems_perPV
+    hf['Meta/Nelems_perPV'] = nelems_perPV #nelems_perPV might not be accurate
     hf['Meta/Num_PVs'] = n_pvs
 
-    #special group 'PV_StopAddr' for BPM-TBT
+    #special group 'PV_StopAddr' for BPM-TBT, BPM-FA
     try:
         pvlist_str = pmconfig_dict["PV_StopAddr"]["pvlist"]
         pv_names = [str(pv) for pv in pvlist_str.split()]
