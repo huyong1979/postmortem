@@ -1,0 +1,18 @@
+#$(SYS):BBF
+record(calcout,"SR-APHLA{$(SYS)}PM-Calc_") {
+    #field(INPA,"SR-RF{CFD:2-RAM}Cmd:Time CP")
+    #field(CALC,"1")
+    field(OUT, "SR-APHLA{$(SYS)}PM-Cmd.PROC")
+    field(ODLY, "$(DELAY)")
+    field(INPA,"SR:C23-BI{BPM:10}PM:Status-I CP")
+    field(CALC,"A")
+    field(OOPT,"Transition To Zero")
+}
+
+record(bo, "SR-APHLA{$(SYS)}PM-Cmd") {
+    field(DTYP,"Launcher")
+    field(OUT, "@python /epics/iocs/postmortem/bxb_pm.py")
+    field(ZNAM,"Idle")
+    field(ONAM,"Setting")
+}
+
