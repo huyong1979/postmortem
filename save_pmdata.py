@@ -114,7 +114,7 @@ try:
         
         g_pvnames.create_dataset(str(pv_group), data=pv_names)
         g_pvtimestamp.create_dataset(str(pv_group), data=pv_timestamps)
-        g_wfdata.create_dataset(str(pv_group), data=pv_values)
+        g_wfdata.create_dataset(str(pv_group), data=pv_values, compression='gzip')
         caput(status_pv, 2) #"Started to write data ..."
 
     #the fifth standard group: Meta 
