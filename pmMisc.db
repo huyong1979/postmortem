@@ -1,6 +1,4 @@
 #$miscellaneous PVs for Postmortem application
-#makeAutosaveFileFromDbInfo("./as/req/settings_pass1.req", "autosaveFields_pass1")
-#create_monitor_set("settings_pass1.req", 30 , "")
 #scanOnce: Process SR-APHLA{PM}LastDumpTS-Calc_
 #scanOnce: Process SR-APHLA{PM}LastResetTS-Calc_
 #scanOnce: Process SR-APHLA{PM}LastResetTS-Sts
@@ -26,7 +24,16 @@ record(stringin, "SR-APHLA{PM}LastDumpTS-Sts")
     field(TSEL,"SR:C23-BI{BPM:10}PM:Status-I.TIME")
     field(INP, "@%Y-%m-%d %H:%M:%S.%f")
     info(autosaveFields_pass0, "VAL")
+    field(FLNK, "SR-APHLA{}PM-Cmd")
 }
+
+record(bo, "SR-APHLA{}PM-Cmd") {
+    field(DTYP,"Launcher")
+    field(OUT, "@python /epics/iocs/postmortem/save_pmdata_v2.py")
+    field(ZNAM,"Idle")
+    field(ONAM,"Setting")
+}
+
 
 #SR-APHLA{PM}LastResetTS-Calc_ is processed during iocInit
 record(calcout,"SR-APHLA{PM}LastResetTS-Calc_") {

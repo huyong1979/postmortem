@@ -40,6 +40,7 @@ from datetime import datetime
 import h5py
 from pathlib import Path
 
+#status = "SR:AI-PM:ArchiverStatus-S"
 status_pv = "SR-APHLA{" + sub_sys + "}PM:Status-Sts"
 error_pv =  "SR-APHLA{" + sub_sys + "}PM:ErrorMsg-Wf"
 filename_pv =  "SR-APHLA{" + sub_sys + "}PM:LastSavedFile-Wf"
