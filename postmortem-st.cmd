@@ -9,7 +9,7 @@ cd "/epics/iocs/postmortem/pure-elauncher"
 dbLoadDatabase("dbd/scriptlaunch.dbd",0,0)
 scriptlaunch_registerRecordDeviceDriver(pdbbase)
 
-#dbLoadRecords("$(EPICS_BASE)/db/iocAdminSoft.db", "IOC=SR-APHLA{IOC:PMRFCFD2}")
+dbLoadRecords("$(EPICS_BASE)/db/iocAdminSoft.db", "IOC=SR-APHLA{PM}")
 #dbLoadRecords ("$(EPICS_BASE)/db/save_restoreStatus.db", "P=SR-APHLA{IOC:PMRFCFD2}")
 cd "/epics/iocs/postmortem/"
 dbLoadRecords("pmMisc.db")
