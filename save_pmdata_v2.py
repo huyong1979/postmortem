@@ -7,7 +7,7 @@ os.environ["EPICS_CA_MAX_ARRAY_BYTES"] = '200000000'
 from pkg_resources import require
 require('cothread')
 import cothread
-from cothread.catools import caget, caput, FORMAT_TIME, DBR_CHAR_STR
+from cothread.catools import caget, caput, ca_nothing, FORMAT_TIME, DBR_CHAR_STR
 
 import traceback
 from datetime import datetime
@@ -21,15 +21,15 @@ import time
 #status PV for operation
 op_status = "SR:AI-PM:ArchiverStatus-S"
 
-# used in _caget()
-n_repeat = 3
-if sys.version_info < (3,):
-    pv_string_types = (str, unicode)
-else:
-    pv_string_types = st
 
 def _caget(pvs, **kargs):
     '''A wrapper of caget(): try multiple times of caget if it fails'''
+    if sys.version_info < (3,):
+        pv_string_types = (str, unicode)
+    else:
+        pv_string_types = str
+
+    n_repeat = 3
     for i in range(n_repeat):
         values = caget(pvs, throw=False, **kargs)
         if isinstance(pvs, pv_string_types): # pvs: single PV
@@ -44,11 +44,11 @@ def _caget(pvs, **kargs):
                 if not value.ok:
                     print("%s: failed to get %s"%(datetime.now(), value.name))
 
-    return None
+    return ca_nothing
                     
     
 trigger_value = _caget('SR:C23-BI{BPM:10}PM:Status-I', format=FORMAT_TIME)
-if None == trigger_value:
+if ca_nothing == trigger_value:
     print("%s: failed to read trigger PV"%datetime.now())
     sys.exit()
 
@@ -103,7 +103,8 @@ for sub_sys in sub_systems:
   status_pv = "SR-APHLA{" + sub_sys + "}PM:Status-Sts"
   error_pv =  "SR-APHLA{" + sub_sys + "}PM:ErrorMsg-Wf"
   filename_pv =  "SR-APHLA{" + sub_sys + "}PM:LastSavedFile-Wf"
-  ca_timeout = _caget("SR-APHLA{" + sub_sys + "}PM:CATimeout-I") # 60-sec
+  #ca_timeout = _caget("SR-APHLA{" + sub_sys + "}PM:CATimeout-I") # 60-sec
+  ca_timeout = 120
 
   t0 = time.time()
   pmconfig_dict = read_conf(sub_sys)
@@ -180,4 +181,4 @@ for sub_sys in sub_systems:
     traceback.print_exc()
 
 cothread.Sleep(5)
-caput(op_status, "Done!", throw=False)
+caput(op_status, "Done.", throw=False)
