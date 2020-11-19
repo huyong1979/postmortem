@@ -22,14 +22,13 @@ import time
 op_status = "SR:AI-PM:ArchiverStatus-S"
 
 
-def _caget(pvs, **kargs):
+def _caget(pvs, n_repeat=5, **kargs):
     '''A wrapper of caget(): try multiple times of caget if it fails'''
     if sys.version_info < (3,):
         pv_string_types = (str, unicode)
     else:
         pv_string_types = str
 
-    n_repeat = 3
     for i in range(n_repeat):
         values = caget(pvs, throw=False, **kargs)
         if isinstance(pvs, pv_string_types): # pvs: single PV
@@ -55,7 +54,7 @@ if ca_nothing == trigger_value:
 trigger_ts = datetime.fromtimestamp(trigger_value.timestamp)
 print("\n%s: beam dumped!"%str(trigger_ts))
 caput(op_status, "Beam dumped! Wait ...", throw=False)
-cothread.Sleep(210) # wait 210-second for circular buffer data ready 
+cothread.Sleep(150) # wait (210-60)-second for circular buffer data ready 
 
 
 def read_conf(sub_sys):
@@ -77,8 +76,8 @@ def read_conf(sub_sys):
 
 def get_filename(sub_sys):
     '''file format: /WFdata/WFdata/Y2020/M08/D12/RF-20200812-16:34:22.774905.h5'''    
-    #path = '/WFdata/WFdata'
-    path = '/epics/iocs/postmortem/WFdata'
+    path = '/WFdata/WFdata'
+    #path = '/epics/iocs/postmortem/WFdata'
     if not os.path.isdir(path):
         print("%s seems not available, so use the current working directory"%path)
         path = os.popen('pwd').read().strip()
@@ -97,6 +96,7 @@ def get_filename(sub_sys):
     return file_name
 
 
+t_start = time.time()
 # read and save PM data for each sub-system (ordered by data size) 
 sub_systems = ['CBLM','BPM_FA','AI','BPM_TBT','PS','RF_CFC2','RF','RF_CFD2']
 for sub_sys in sub_systems:
@@ -113,7 +113,7 @@ for sub_sys in sub_systems:
     continue
 
   print("%s: saving data for %s ..."%(datetime.now(), sub_sys))
-  #caput(status_pv, 1, throw=False) #"Started to read data ..."
+  caput(status_pv, 1, throw=False) #"Started to read data ..."
   caput(op_status, "saving data for "+sub_sys, throw=False)
 
   try:
@@ -152,7 +152,7 @@ for sub_sys in sub_systems:
         g_pvnames.create_dataset(str(pv_group), data=pv_names)
         g_pvtimestamp.create_dataset(str(pv_group), data=pv_timestamps)
         g_wfdata.create_dataset(str(pv_group), data=pv_values, compression='gzip')
-        #caput(status_pv, 2, throw=False) #"Started to write data ..."
+        caput(status_pv, 2, throw=False) #"Started to write data ..."
 
     #the fifth standard group: Meta 
     hf['Meta/Nelems_perPV'] = nelems_perPV #nelems_perPV might not be accurate
@@ -167,18 +167,27 @@ for sub_sys in sub_systems:
         pass 
 
     hf.close()
-    #caput(status_pv, 0, throw=False) #"Done!
-    #caput(error_pv, "No error.", datatype=DBR_CHAR_STR, throw=False)
-    #caput(filename_pv, file_name,datatype=DBR_CHAR_STR, throw=False)
+    caput(status_pv, 0, throw=False) #"Done!
+    caput(error_pv, "No error.", datatype=DBR_CHAR_STR, throw=False)
+    caput(filename_pv, file_name,datatype=DBR_CHAR_STR, throw=False)
     totalT = time.time() - t0
     print("\tit takes %f seconds to read and write data for %s"%(totalT, sub_sys))
-    #caput("SR-APHLA{" + sub_sys + "}PM:RWTime-I", totalT, throw=False)
+    caput("SR-APHLA{" + sub_sys + "}PM:RWTime-I", totalT, throw=False)
     caput(op_status, "data saved for "+sub_sys, throw=False)
   except:
-    #caput(status_pv, 3, throw=False) #"Failed!
-    #caput(error_pv, traceback.format_exc(), datatype=DBR_CHAR_STR, throw=False)
+    caput(status_pv, 3, throw=False) #"Failed!
+    caput(error_pv, traceback.format_exc(), datatype=DBR_CHAR_STR, throw=False)
     caput(op_status, "Failed to save data for "+sub_sys, throw=False)
     traceback.print_exc()
 
-cothread.Sleep(5)
+loop_time = time.time() - t_start
+print("Total loop time: %f seconds"%loop_time)
+caput('SR-APHLA{PM}LoopTime-I', loop_time, throw=False)
+#cothread.Sleep(5)
+
+#save Bunch-by-Bunch Feedback (BBF) data 
+import subprocess
+subprocess.call(['python', 'bxb_pm.py'])
 caput(op_status, "Done.", throw=False)
+
+

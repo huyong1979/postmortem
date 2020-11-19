@@ -10,8 +10,8 @@ record(calcout,"SR-APHLA{$(SYS)}PM-Calc_") {
 }
 
 record(bo, "SR-APHLA{$(SYS)}PM-Cmd") {
-    field(DTYP,"Launcher")
-    field(OUT, "@python /epics/iocs/postmortem/bxb_pm.py")
+    #field(DTYP,"Launcher")
+    #field(OUT, "@python /epics/iocs/postmortem/bxb_pm.py")
     field(ZNAM,"Idle")
     field(ONAM,"Setting")
 }

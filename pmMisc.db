@@ -55,3 +55,10 @@ record(stringin, "SR-APHLA{PM}LastResetTS-Sts")
     info(autosaveFields_pass0, "VAL")
 }
 
+record(ai, "SR-APHLA{PM}LoopTime-I") {
+    field(DESC,"Total loop time")
+    field(EGU, "Sec")
+    field(PINI, "YES")
+    info(autosaveFields_pass0, "VAL")
+}
+

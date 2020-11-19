@@ -2,7 +2,39 @@
 then save all kinds of data to .h5 file.
 Created on Aug. 12, 2020; @author: yhu
 '''
+import sys, os, time
+if len(sys.argv) != 2:
+    print("You have to give a sub-system name, e.g.: python %s RF"%sys.argv[0])
+    sys.exit()
+sub_sys = str(sys.argv[1])
 
+from datetime import datetime
+from pathlib import Path
+
+print("\n%s: beam dumped! (version 1)"%str(datetime.now()))
+
+path = '/WFdata/WFdata'
+if not os.path.isdir(path):
+    print("%s seems not available, so use the current working directory"%path)
+    path = os.popen('pwd').read().strip()
+
+year = str(time.strftime("%Y"))
+mon = str(time.strftime("%m"))
+day = str(time.strftime("%d"))
+path = path + '/Y' + year + '/M' + mon + '/D' + day + '/' 
+if not os.path.isdir(path):
+    print("the directory %s seems not existing, so creating one ..."%path)
+    new_dir = Path(path)
+    new_dir.mkdir(parents=True)   
+
+ts_format = "%Y%m%d-%H:%M:%S.%f"
+file_name = path + sub_sys + '-' + str(datetime.now()) + ".txt"
+fd = open(file_name, 'w')
+fd.write("test")
+fd.close()
+sys.exit()
+
+#11/18/2020: this version is retired; save_pmdata_v2.py is in use
 import sys
 if len(sys.argv) != 2:
     print("You have to give a sub-system name, e.g.: python %s RF"%sys.argv[0])
