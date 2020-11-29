@@ -29,9 +29,9 @@ if not os.path.isdir(path):
 
 ts_format = "%Y%m%d-%H:%M:%S.%f"
 file_name = path + sub_sys + '-' + str(datetime.now()) + ".txt"
-fd = open(file_name, 'w')
-fd.write("test")
-fd.close()
+#fd = open(file_name, 'w')
+#fd.write("test")
+#fd.close()
 sys.exit()
 
 #11/18/2020: this version is retired; save_pmdata_v2.py is in use

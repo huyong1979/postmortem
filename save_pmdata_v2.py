@@ -18,18 +18,33 @@ import sys
 import ConfigParser
 import time
 
-#status PV for operation
-op_status = "SR:AI-PM:ArchiverStatus-S"
+t_start = time.time()
+op_status = "SR:AI-PM:ArchiverStatus-S" # status PV for operation
+status = 0 # failed to save data if status = 3*n > 0 
+waiting_time = 150 # wait (210-60)-second for circular buffer data ready 
+
+def _caget(pvs, wait=120, **kargs):
+    '''A wrapper of caget(): wait for 120-second, then give one more try if the 
+    first caget fails'''
+    try:
+        return caget(pvs, **kargs)
+    except:
+        traceback.print_exc()
+        cothread.Sleep(wait);
+        return caget(pvs, throw=False, **kargs)
 
 
-def _caget(pvs, n_repeat=5, **kargs):
-    '''A wrapper of caget(): try multiple times of caget if it fails'''
+#11/28/2020: PS data were not saved with _caget_n(), meaning immediate another 
+# caget after one failed caget seems not working well      
+'''  
+def _caget_n(pvs, n_try=5, **kargs):
+    #A wrapper of caget(): try multiple times of caget if it fails
     if sys.version_info < (3,):
         pv_string_types = (str, unicode)
     else:
         pv_string_types = str
 
-    for i in range(n_repeat):
+    for i in range(n_try):
         values = caget(pvs, throw=False, **kargs)
         if isinstance(pvs, pv_string_types): # pvs: single PV
             if values.ok:
@@ -44,7 +59,7 @@ def _caget(pvs, n_repeat=5, **kargs):
                     print("%s: failed to get %s"%(datetime.now(), value.name))
 
     return ca_nothing
-                    
+'''                    
     
 trigger_value = _caget('SR:C23-BI{BPM:10}PM:Status-I', format=FORMAT_TIME)
 if ca_nothing == trigger_value:
@@ -54,7 +69,8 @@ if ca_nothing == trigger_value:
 trigger_ts = datetime.fromtimestamp(trigger_value.timestamp)
 print("\n%s: beam dumped!"%str(trigger_ts))
 caput(op_status, "Beam dumped! Wait ...", throw=False)
-cothread.Sleep(150) # wait (210-60)-second for circular buffer data ready 
+caput('SR-APHLA{PM}Program-Sts', 1, throw=False)
+cothread.Sleep(waiting_time) # wait (210-60)-second for circular buffer data ready 
 
 
 def read_conf(sub_sys):
@@ -96,15 +112,14 @@ def get_filename(sub_sys):
     return file_name
 
 
-t_start = time.time()
 # read and save PM data for each sub-system (ordered by data size) 
 sub_systems = ['CBLM','BPM_FA','AI','BPM_TBT','PS','RF_CFC2','RF','RF_CFD2']
 for sub_sys in sub_systems:
   status_pv = "SR-APHLA{" + sub_sys + "}PM:Status-Sts"
   error_pv =  "SR-APHLA{" + sub_sys + "}PM:ErrorMsg-Wf"
   filename_pv =  "SR-APHLA{" + sub_sys + "}PM:LastSavedFile-Wf"
-  #ca_timeout = _caget("SR-APHLA{" + sub_sys + "}PM:CATimeout-I") # 60-sec
-  ca_timeout = 120
+  ca_timeout = _caget("SR-APHLA{" + sub_sys + "}PM:CATimeout-I") # 60-sec
+  #ca_timeout = 120
 
   t0 = time.time()
   pmconfig_dict = read_conf(sub_sys)
@@ -176,18 +191,32 @@ for sub_sys in sub_systems:
     caput(op_status, "data saved for "+sub_sys, throw=False)
   except:
     caput(status_pv, 3, throw=False) #"Failed!
+    status += 3;
     caput(error_pv, traceback.format_exc(), datatype=DBR_CHAR_STR, throw=False)
     caput(op_status, "Failed to save data for "+sub_sys, throw=False)
     traceback.print_exc()
 
-loop_time = time.time() - t_start
-print("Total loop time: %f seconds"%loop_time)
-caput('SR-APHLA{PM}LoopTime-I', loop_time, throw=False)
-#cothread.Sleep(5)
-
 #save Bunch-by-Bunch Feedback (BBF) data 
-import subprocess
-subprocess.call(['python', 'bxb_pm.py'])
+t_bbf = time.time()
+caput('SR-APHLA{BBF}PM:Status-Sts', 1, throw=False)
+try:
+    import subprocess
+    subprocess.call(['python', 'bxb_pm.py'])
+    caput(op_status, "data saved for BBF", throw=False)
+    caput('SR-APHLA{BBF}PM:Status-Sts', 0, throw=False)
+    totalT_bbf = time.time() - t_bbf
+    print("\tit takes %f seconds to read and write data for BBF"%totalT_bbf)
+    caput("SR-APHLA{BBF}PM:RWTime-I", totalT_bbf, throw=False)
+except:
+    status += 3;
+    caput(op_status, "Failed to save data for BBF", throw=False)
+    caput('SR-APHLA{BBF}PM:Status-Sts', 3, throw=False)
+    traceback.print_exc() 
+
+cothread.Sleep(1)     
 caput(op_status, "Done.", throw=False)
-
-
+caput('SR-APHLA{PM}Status-Sts', int(status/3), throw=False)
+loop_time = time.time() - t_start
+print("\nTotal time (%d-sec-waiting): %f seconds"%(waiting_time, loop_time))
+caput('SR-APHLA{PM}LoopTime-I', loop_time, throw=False)
+caput('SR-APHLA{PM}Program-Sts', 0, throw=False)
