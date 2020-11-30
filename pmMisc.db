@@ -11,29 +11,19 @@ record(calcout,"SR-APHLA{PM}LastDumpTS-Calc_") {
     field(OOPT,"Transition To Zero")
     field(OUT, "SR-APHLA{PM}LastDumpTS-Sts.PROC")
 }
-
 record(stringin, "SR-APHLA{PM}LastDumpTS-Sts")
 {
     field(DTYP,"Soft Timestamp")
     # DO NOT use PINI, otherwise, autosave does not work
-#recGblGetTimeStamp: dbGetTimeStamp failed, 
-#SR-APHLA{PM}LastDumpTS-Sts.TSEL = SR:C23-BI{BPM:10}PM:Status-I
+    #recGblGetTimeStamp: dbGetTimeStamp failed, 
+    #SR-APHLA{PM}LastDumpTS-Sts.TSEL = SR:C23-BI{BPM:10}PM:Status-I
     #field(PINI,"YES")
     field(UDF,"0")
     field(TPRO,"1")
     field(TSEL,"SR:C23-BI{BPM:10}PM:Status-I.TIME")
     field(INP, "@%Y-%m-%d %H:%M:%S.%f")
     info(autosaveFields_pass0, "VAL")
-    field(FLNK, "SR-APHLA{}PM-Cmd")
 }
-
-record(bo, "SR-APHLA{}PM-Cmd") {
-    field(DTYP,"Launcher")
-    field(OUT, "@python /epics/iocs/postmortem/save_pmdata_v2.py")
-    field(ZNAM,"Idle")
-    field(ONAM,"Setting")
-}
-
 
 #SR-APHLA{PM}LastResetTS-Calc_ is processed during iocInit
 record(calcout,"SR-APHLA{PM}LastResetTS-Calc_") {
@@ -43,7 +33,6 @@ record(calcout,"SR-APHLA{PM}LastResetTS-Calc_") {
     field(OOPT,"Transition To Non-zero")
     field(OUT, "SR-APHLA{PM}LastResetTS-Sts.PROC")
 }
-
 #SR-APHLA{PM}LastResetTS-Sts is processed during iocInit
 record(stringin, "SR-APHLA{PM}LastResetTS-Sts")
 {
@@ -53,6 +42,23 @@ record(stringin, "SR-APHLA{PM}LastResetTS-Sts")
     field(TSEL,"SR:C23-BI{BPM:10}PM:Status-I.TIME")
     field(INP, "@%Y-%m-%d %H:%M:%S.%f")
     info(autosaveFields_pass0, "VAL")
+}
+
+#INPA: a local CA link; 
+#OUT:  "CA" provides "cached puts" so that "SR-APHLA{}PM-Cmd"
+## can catch one more beam dump even when the first data set are still being saved  
+record(calcout,"SR-APHLA{}PM-Calc_") {
+    field(TPRO,"1")
+    field(INPA,"SR-APHLA{PM}LastDumpTS-Calc_ CP")
+    field(CALC,"A")
+    field(OOPT,"Transition To Zero")
+    field(OUT, "SR-APHLA{}PM-Cmd CA")
+}
+record(bo, "SR-APHLA{}PM-Cmd") {
+    field(DTYP,"Launcher")
+    field(OUT, "@python /epics/iocs/postmortem/save_pmdata_v2.py")
+    field(ZNAM,"Idle")
+    field(ONAM,"Setting")
 }
 
 record(ai, "SR-APHLA{PM}LoopTime-I") {
